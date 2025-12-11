@@ -1,49 +1,49 @@
 # Use official Python 3.9 slim image
 FROM python:3.9-slim
 
-# Install dependencies for Chrome and Selenium
+# Install basic dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     unzip \
     curl \
     xvfb \
     gnupg \
-    ca-certificates \
     libnss3 \
     libxss1 \
     libfontconfig1 \
     libx11-xcb1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Add Google signing key and repository (new way)
-RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
-        > /etc/apt/sources.list.d/google-chrome.list \
+# Install Google Chrome 142.x
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
     && apt-get update \
-    && apt-get install -y google-chrome-stable \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y ./google-chrome-stable_current_amd64.deb \
+    || apt-get install -f -y \
+    && rm google-chrome-stable_current_amd64.deb
 
-# Install ChromeDriver matching Chrome version
-RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}') \
-    && CHROME_MAJOR=$(echo $CHROME_VERSION | cut -d '.' -f1) \
-    && DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_MAJOR") \
-    && wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip" \
-    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
-    && chmod +x /usr/local/bin/chromedriver \
-    && rm /tmp/chromedriver.zip
+# Verify Chrome version (optional)
+RUN google-chrome --version
+
+# Install ChromeDriver matching Chrome 142
+RUN wget https://storage.googleapis.com/chrome-for-testing-public/142.0.7444.162/linux64/chromedriver-linux64.zip \
+    && unzip chromedriver-linux64.zip \
+    && mv chromedriver-linux64 /usr/bin/chromedriver \
+    && chown root:root /usr/bin/chromedriver \
+    && chmod +x /usr/bin/chromedriver \
+    && rm chromedriver-linux64.zip
 
 # Set working directory
 WORKDIR /app
 
-# Copy Python requirements and install
+# Copy requirements and install Python dependencies
 COPY app/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy app code
 COPY . /app
 
-# Expose Flask port
+# Expose port (if running Flask)
 EXPOSE 5000
 
-# Default command to run tests
+# Default command: run pytest
 CMD ["pytest", "-q", "tests"]
