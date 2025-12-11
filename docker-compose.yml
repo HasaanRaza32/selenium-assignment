@@ -7,9 +7,9 @@ services:
     container_name: selenium-mysql
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: testdb
-      MYSQL_USER: testuser
-      MYSQL_PASSWORD: testpass
+      MYSQL_DATABASE: appdb              # Changed from testdb
+      MYSQL_USER: wordpress               # Changed from testuser
+      MYSQL_PASSWORD: password            # Changed from testpass
     ports:
       - "3306:3306"
     networks:
@@ -21,7 +21,6 @@ services:
       retries: 10
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
   # Flask Application
   app:
@@ -34,9 +33,9 @@ services:
         condition: service_healthy
     environment:
       - MYSQL_HOST=mysql
-      - MYSQL_USER=testuser
-      - MYSQL_PASSWORD=testpass
-      - MYSQL_DATABASE=testdb
+      - MYSQL_USER=wordpress
+      - MYSQL_PASSWORD=password
+      - MYSQL_DATABASE=appdb
       - FLASK_APP=app/app.py
     ports:
       - "5000:5000"
@@ -44,7 +43,7 @@ services:
       - test-network
     command: python -m flask run --host=0.0.0.0 --port=5000
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 5s
       timeout: 3s
       retries: 10
