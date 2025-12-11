@@ -1,0 +1,32 @@
+version: "3.8"
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+  app:
+    build: ./app
+    depends_on:
+      - mysql
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: password
+    ports:
+      - "5000:5000"
+  selenium-tests:
+    build: ./selenium-test-docker
+    depends_on:
+      - app
+    environment:
+      APP_URL: http://app:5000
+volumes:
+  mysql-data:
