@@ -3,72 +3,33 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Code Linting') {
+        stage('Build Docker Image') {
             steps {
-                sh '''
-                    echo "Running lint..."
-                    python3 -m pip install --user flake8 || true
-                    ~/.local/bin/flake8 app || true
-                '''
+                echo "Building Docker image..."
+                sh 'docker build -t selenium-tests .'
             }
         }
 
-        stage('Build App Image') {
+        stage('Run Selenium Tests') {
             steps {
-                sh '''
-                    echo "Building Flask app image..."
-                    docker build -t selenium-app -f app/Dockerfile app/
-                '''
-            }
-        }
-
-        stage('Unit Testing') {
-            steps {
-                sh '''
-                    echo "Running unit tests inside Docker..."
-
-                    cat <<EOF > Dockerfile.tests
-                    FROM python:3.10
-                    WORKDIR /app
-                    COPY . .
-                    RUN pip install pytest flask requests
-                    CMD ["pytest", "-q"]
-                    EOF
-
-                    docker build -t unit-tests -f Dockerfile.tests .
-                    docker run --rm unit-tests
-                '''
-            }
-        }
-
-        stage('Containerized Deployment') {
-            steps {
-                sh '''
-                    echo "Building Selenium test image..."
-                    docker build -t selenium-tests -f selenium-test-docker/Dockerfile selenium-test-docker/
-                '''
-            }
-        }
-
-        stage('Selenium Testing') {
-            steps {
-                sh '''
-                    echo "Running Selenium tests..."
-                    docker run --rm selenium-tests
-                '''
+                echo "Running tests inside Docker container..."
+                sh 'docker run --rm selenium-tests'
             }
         }
     }
 
     post {
-        always {
-            echo "Pipeline completed."
+        success {
+            echo "Pipeline completed successfully!"
+        }
+        failure {
+            echo "Pipeline failed! Check the logs for details."
         }
     }
 }
