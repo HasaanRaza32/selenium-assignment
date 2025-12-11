@@ -13,7 +13,7 @@ def get_driver():
     return driver
 
 def test_homepage_title():
-    url = os.environ.get('APP_URL','http://app:5000/')
+    url = os.environ.get('APP_URL', 'http://127.0.0.1:5000/')
     d = get_driver()
     d.get(url)
     time.sleep(1)
