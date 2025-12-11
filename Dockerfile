@@ -1,8 +1,12 @@
+# Base image
 FROM python:3.9-slim
 
+# Set working directory
 WORKDIR /app
 
+# -----------------------------
 # Install system dependencies
+# -----------------------------
 RUN apt-get update && apt-get install -y \
     wget \
     unzip \
@@ -25,30 +29,36 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Google Chrome
+# -----------------------------
+# Install Google Chrome (fixed version)
+# -----------------------------
 RUN wget -O /tmp/google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     apt-get update && apt-get install -y /tmp/google-chrome.deb && \
     rm /tmp/google-chrome.deb
 
-# Install ChromeDriver
-RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f1) && \
-    DRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/latest-linux64.json" \
-                     | grep -oP '"version": "\K[0-9.]+' | head -1) && \
-    wget -q -O /tmp/chromedriver.zip \
-        "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${DRIVER_VERSION}/linux64/chromedriver-linux64.zip" && \
+# -----------------------------
+# Install ChromeDriver (matching Chrome version)
+# -----------------------------
+RUN wget -O /tmp/chromedriver.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/143.0.7499.40/linux64/chromedriver-linux64.zip && \
     unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
     chmod +x /usr/local/bin/chromedriver && \
     rm /tmp/chromedriver.zip
 
-# Copy requirements and install Python dependencies
+# -----------------------------
+# Install Python dependencies
+# -----------------------------
 COPY app/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy entire project
+# -----------------------------
+# Copy entire project into container
+# -----------------------------
 COPY . .
 
 # Make app importable
 ENV PYTHONPATH="/app"
 
-# Run tests
+# -----------------------------
+# Default command: run tests
+# -----------------------------
 CMD ["pytest", "-q", "tests"]
