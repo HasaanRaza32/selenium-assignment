@@ -12,18 +12,18 @@ pipeline {
         stage('Code Linting') {
             steps {
                 sh '''
-                    echo "Running linting..."
+                    echo "Running lint..."
                     python3 -m pip install --user flake8 || true
-                    ~/.local/bin/flake8 app || true
+                    ~/.local/bin/flake8 templates || true
                 '''
             }
         }
 
-        stage('Build App') {
+        stage('Build App Image') {
             steps {
                 sh '''
-                    echo "Building application..."
-                    docker build -t selenium-app ./app
+                    echo "Building Flask app image..."
+                    docker build -t flask-app -f templates/Dockerfile templates/
                 '''
             }
         }
@@ -31,9 +31,18 @@ pipeline {
         stage('Unit Testing') {
             steps {
                 sh '''
-                    echo "Running unit tests..."
-                    python3 -m pip install --user pytest || true
-                    pytest -q || true
+                    echo "Running unit tests inside Docker..."
+
+                    cat <<EOF > Dockerfile.tests
+                    FROM python:3.10
+                    WORKDIR /app
+                    COPY . .
+                    RUN pip install pytest flask requests
+                    CMD ["pytest", "-q"]
+                    EOF
+
+                    docker build -t unit-tests -f Dockerfile.tests .
+                    docker run --rm unit-tests
                 '''
             }
         }
@@ -42,7 +51,7 @@ pipeline {
             steps {
                 sh '''
                     echo "Building Selenium test container..."
-                    docker build -t selenium-tests .
+                    docker build -t selenium-tests -f selenium-test-docker/Dockerfile selenium-test-docker/
                 '''
             }
         }
@@ -59,7 +68,7 @@ pipeline {
 
     post {
         always {
-            echo "Pipeline finished."
+            echo "Pipeline completed."
         }
     }
 }
