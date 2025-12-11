@@ -10,7 +10,7 @@ def get_driver():
     return webdriver.Chrome(options=options)
 
 def test_submit_form():
-    url = os.environ.get('APP_URL','http://app:5000/')
+    url = os.environ.get('APP_URL', 'http://127.0.0.1:5000/')
     d = get_driver()
     d.get(url)
     elem = d.find_element('name', 'name')
