@@ -49,7 +49,10 @@ COPY . .
 ENV PYTHONPATH=/app
 ENV FLASK_APP=app/app.py
 
-# Set MySQL environment variables (will be overridden by docker-compose if used)
+# Use SQLite for testing (no external database needed)
+ENV USE_SQLITE=true
+
+# MySQL environment variables (for production use)
 ENV MYSQL_HOST=mysql
 ENV MYSQL_USER=wordpress
 ENV MYSQL_PASSWORD=password
