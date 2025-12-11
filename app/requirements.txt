@@ -1,5 +1,6 @@
-flask==2.3.2
-werkzeug==2.3.7
-selenium==4.15.0
-mysql-connector-python
-pytest
+flask==3.0.0
+mysql-connector-python==8.0.33
+selenium==4.15.2
+pytest==7.4.3
+webdriver-manager==4.0.1
+requests==2.31.0
