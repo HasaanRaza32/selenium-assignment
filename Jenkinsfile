@@ -14,7 +14,7 @@ pipeline {
                 sh '''
                     echo "Running lint..."
                     python3 -m pip install --user flake8 || true
-                    ~/.local/bin/flake8 templates || true
+                    ~/.local/bin/flake8 app || true
                 '''
             }
         }
@@ -23,7 +23,7 @@ pipeline {
             steps {
                 sh '''
                     echo "Building Flask app image..."
-                    docker build -t flask-app -f templates/Dockerfile templates/
+                    docker build -t selenium-app -f app/Dockerfile app/
                 '''
             }
         }
@@ -50,7 +50,7 @@ pipeline {
         stage('Containerized Deployment') {
             steps {
                 sh '''
-                    echo "Building Selenium test container..."
+                    echo "Building Selenium test image..."
                     docker build -t selenium-tests -f selenium-test-docker/Dockerfile selenium-test-docker/
                 '''
             }
