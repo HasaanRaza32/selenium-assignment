@@ -1,32 +1,72 @@
-version: "3.8"
+version: '3.8'
+
 services:
+  # MySQL Database
   mysql:
     image: mysql:8.0
+    container_name: selenium-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: appdb
-      MYSQL_USER: wordpress
-      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: testdb
+      MYSQL_USER: testuser
+      MYSQL_PASSWORD: testpass
     ports:
       - "3306:3306"
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     volumes:
       - mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # Flask Application
   app:
-    build: ./app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: selenium-flask-app
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     environment:
-      MYSQL_HOST: mysql
-      MYSQL_DATABASE: appdb
-      MYSQL_USER: wordpress
-      MYSQL_PASSWORD: password
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=testuser
+      - MYSQL_PASSWORD=testpass
+      - MYSQL_DATABASE=testdb
+      - FLASK_APP=app/app.py
     ports:
       - "5000:5000"
+    networks:
+      - test-network
+    command: python -m flask run --host=0.0.0.0 --port=5000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Selenium Tests
   selenium-tests:
-    build: ./selenium-test-docker
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: selenium-tests
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     environment:
-      APP_URL: http://app:5000
+      - APP_URL=http://app:5000/
+    networks:
+      - test-network
+    command: pytest -v tests/
+
+networks:
+  test-network:
+    driver: bridge
+
 volumes:
   mysql-data:
