@@ -2,16 +2,17 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Copy requirements first (if you have it)
+# Install app dependencies
 COPY app/requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir pytest selenium
-# Copy the tests folder into container
-COPY tests ./tests
 
-# Copy the rest of the project (optional)
+# Install testing dependencies
+RUN pip install pytest selenium
+
+# Copy entire project into the container
 COPY . .
 
-# Run the tests when container starts
+# Make sure Python can import modules from /app
+ENV PYTHONPATH="/app"
+
 CMD ["pytest", "-q", "tests"]
