@@ -6,7 +6,7 @@ WORKDIR /app
 COPY app/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
-
+RUN pip install --no-cache-dir pytest selenium
 # Copy the tests folder into container
 COPY tests ./tests
 
